@@ -94,7 +94,7 @@ export default function Dashboard() {
             <h3 className="text-sm font-medium text-gray-400 mb-3">Live Camera</h3>
             <div className="bg-black rounded-lg overflow-hidden aspect-video">
               <img
-                src="/video/stream"
+                src="/video/"
                 alt="Live camera feed"
                 className="w-full h-full object-contain"
                 onError={(e) => { e.target.style.display = 'none' }}
