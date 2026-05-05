@@ -1,18 +1,82 @@
 import { useState } from 'react'
-import { useCultivation, useAdvancePhase } from '../api/piApi'
+import {
+  useCultivation, useAdvancePhase,
+  usePlantSpecies, useBeginCultivation, useEndCultivation,
+} from '../api/piApi'
+
+function BeginForm() {
+  const { data: speciesList, isLoading: loadingSpecies } = usePlantSpecies()
+  const beginCultivation = useBeginCultivation()
+  const [form, setForm] = useState({ id_plant_species: '', notes: '' })
+
+  const species = Array.isArray(speciesList) ? speciesList : []
+
+  async function handleBegin(e) {
+    e.preventDefault()
+    await beginCultivation.mutateAsync({
+      id_plant_species: Number(form.id_plant_species),
+      notes: form.notes || undefined,
+    })
+  }
+
+  return (
+    <div className="card space-y-4">
+      <h3 className="text-sm font-semibold text-gray-300">Start Cultivation</h3>
+      <form onSubmit={handleBegin} className="space-y-3">
+        <div>
+          <label className="label">Plant species *</label>
+          <select
+            required
+            value={form.id_plant_species}
+            onChange={e => setForm(f => ({ ...f, id_plant_species: e.target.value }))}
+            className="input"
+            disabled={loadingSpecies}
+          >
+            <option value="">— select species —</option>
+            {species.map(s => (
+              <option key={s.id_plant_species} value={s.id_plant_species}>{s.name}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="label">Notes (optional)</label>
+          <input
+            type="text"
+            value={form.notes}
+            onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+            className="input"
+            placeholder="e.g. Batch A, seeds from supplier X"
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={beginCultivation.isPending || !form.id_plant_species}
+          className="btn-primary"
+        >
+          {beginCultivation.isPending ? 'Starting…' : 'Begin cultivation'}
+        </button>
+        {beginCultivation.isError && (
+          <p className="text-xs text-red-400">{beginCultivation.error.message}</p>
+        )}
+      </form>
+    </div>
+  )
+}
 
 export default function Cultivation() {
   const { data, isLoading, error } = useCultivation()
-  const advancePhase = useAdvancePhase()
-  const [notes, setNotes] = useState('')
-  const [advancing, setAdvancing] = useState(false)
+  const advancePhase    = useAdvancePhase()
+  const endCultivation  = useEndCultivation()
+  const [notes, setNotes]           = useState('')
+  const [advancing, setAdvancing]   = useState(false)
+  const [confirmEnd, setConfirmEnd] = useState(false)
 
   if (isLoading) return <div className="p-8 text-gray-500">Loading…</div>
   if (error)     return <div className="p-8 text-red-400">{error.message}</div>
 
-  const cultivation   = data?.cultivation
-  const phases        = data?.phases ?? []
-  const currentPhase  = data?.current_phase
+  const cultivation  = data?.cultivation
+  const phases       = data?.phases ?? []
+  const currentPhase = data?.current_phase
 
   async function handleAdvance() {
     setAdvancing(true)
@@ -24,11 +88,16 @@ export default function Cultivation() {
     }
   }
 
+  async function handleEnd() {
+    await endCultivation.mutateAsync()
+    setConfirmEnd(false)
+  }
+
   if (!cultivation) {
     return (
-      <div className="p-6">
-        <h2 className="text-xl font-semibold mb-4">Cultivation</h2>
-        <div className="card text-gray-500 text-sm">No active cultivation found.</div>
+      <div className="p-6 space-y-6 max-w-2xl">
+        <h2 className="text-xl font-semibold">Cultivation</h2>
+        <BeginForm />
       </div>
     )
   }
@@ -124,6 +193,35 @@ export default function Cultivation() {
         )}
         {advancePhase.isSuccess && (
           <p className="text-xs text-brand-400">Phase advanced successfully.</p>
+        )}
+      </div>
+
+      {/* End cultivation */}
+      <div className="card space-y-3 border border-red-900">
+        <h3 className="text-sm font-semibold text-red-400">End Cultivation</h3>
+        <p className="text-xs text-gray-500">
+          Closes the active cultivation and all open phases. This cannot be undone.
+        </p>
+        {!confirmEnd ? (
+          <button onClick={() => setConfirmEnd(true)} className="btn-secondary text-red-400 border-red-800">
+            End cultivation…
+          </button>
+        ) : (
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleEnd}
+              disabled={endCultivation.isPending}
+              className="btn-primary bg-red-700 hover:bg-red-600"
+            >
+              {endCultivation.isPending ? 'Ending…' : 'Confirm end'}
+            </button>
+            <button onClick={() => setConfirmEnd(false)} className="btn-secondary text-xs">
+              Cancel
+            </button>
+          </div>
+        )}
+        {endCultivation.isError && (
+          <p className="text-xs text-red-400">{endCultivation.error.message}</p>
         )}
       </div>
     </div>
