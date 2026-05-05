@@ -36,17 +36,14 @@ export default function Dashboard() {
     }
   }
 
-  // Flatten sensor readings into cards
   const sensorValues = state?.sensor_values ?? {}
-  const sensors = state?.sensors ?? {}
+  const variablesMap = state?.variables ?? {}
 
-  // Build label map from sensors object (id_sensor -> { varName -> value })
-  // We display one card per variable
   const cards = Object.entries(sensorValues).map(([idVar, value]) => ({
     id_variable: Number(idVar),
     value,
-    label: `Variable ${idVar}`, // replaced with real name below
-    unit: '',
+    label: variablesMap[idVar]?.name ?? `Variable ${idVar}`,
+    unit:  variablesMap[idVar]?.unit ?? '',
   }))
 
   const activePhase = state?.active_phase
@@ -74,12 +71,12 @@ export default function Dashboard() {
           <div className="card text-gray-500 text-sm">No sensor data available.</div>
         ) : (
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {cards.map(({ id_variable, value }) => (
+            {cards.map(({ id_variable, value, label, unit }) => (
               <SensorCard
                 key={id_variable}
-                label={`Variable ${id_variable}`}
+                label={label}
                 value={value}
-                unit=""
+                unit={unit}
                 history={historyMap[id_variable] ?? []}
                 min={thresholdMap[id_variable]?.min}
                 max={thresholdMap[id_variable]?.max}

@@ -21,8 +21,9 @@ export default function Graphs() {
   const { data: state } = useSystemState()
   const { data: mData, isLoading } = useMeasurements({ limit: 2000 })
 
-  // Collect all variable IDs from current sensor state
-  const varIds = Object.keys(state?.sensor_values ?? {}).map(Number)
+  const varIds      = Object.keys(state?.sensor_values ?? {}).map(Number)
+  const variablesMap = state?.variables ?? {}
+  const varLabel = (id) => variablesMap[id]?.name ?? `Variable ${id}`
 
   // Filter measurements by selected time range
   const cutoff = new Date(Date.now() - range.minutes * 60_000)
@@ -81,7 +82,7 @@ export default function Graphs() {
           >
             <option value="">All variables</option>
             {varIds.map(id => (
-              <option key={id} value={id}>Variable {id}</option>
+              <option key={id} value={id}>{varLabel(id)}</option>
             ))}
           </select>
         </div>
@@ -120,7 +121,7 @@ export default function Graphs() {
                     key={varId}
                     type="monotone"
                     dataKey={`var_${varId}`}
-                    name={`Variable ${varId}`}
+                    name={varLabel(varId)}
                     stroke={COLOURS[i % COLOURS.length]}
                     dot={false}
                     strokeWidth={2}
@@ -147,7 +148,7 @@ export default function Graphs() {
             return (
               <div key={varId} className="card text-sm space-y-1">
                 <div className="font-medium" style={{ color: COLOURS[i % COLOURS.length] }}>
-                  Variable {varId}
+                  {varLabel(varId)}
                 </div>
                 <div className="flex justify-between text-gray-400">
                   <span>Avg</span><span className="text-gray-200">{avg.toFixed(2)}</span>

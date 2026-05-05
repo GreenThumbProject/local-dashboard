@@ -87,6 +87,35 @@ export function useAdvancePhase() {
   })
 }
 
+export function usePlantSpecies() {
+  return useQuery({
+    queryKey: ['plant-species'],
+    queryFn: () => get('/settings/plant-species'),
+  })
+}
+
+export function useBeginCultivation() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body) => post('/settings/cultivation/begin', body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['cultivation'] })
+      qc.invalidateQueries({ queryKey: ['state'] })
+    },
+  })
+}
+
+export function useEndCultivation() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => post('/settings/cultivation/end', {}),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['cultivation'] })
+      qc.invalidateQueries({ queryKey: ['state'] })
+    },
+  })
+}
+
 // ---------------------------------------------------------------------------
 // Actuator commands — POST /state/actuators/{id}/command
 // ---------------------------------------------------------------------------
