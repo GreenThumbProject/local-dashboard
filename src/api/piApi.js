@@ -24,7 +24,7 @@ export function useSystemState(refetchInterval = 10_000) {
 export function useMeasurements({ id_variable, limit = 200 } = {}) {
   return useQuery({
     queryKey: ['measurements', id_variable, limit],
-    queryFn: () => get(`/measurement/?limit=${limit}${id_variable ? `&id_variable=${id_variable}` : ''}`),
+    queryFn: () => get(`/measurement?limit=${limit}${id_variable ? `&id_variable=${id_variable}` : ''}`),
     enabled: true,
   })
 }
