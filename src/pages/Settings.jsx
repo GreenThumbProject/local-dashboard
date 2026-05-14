@@ -2,20 +2,18 @@ import { useState } from 'react'
 import { HexColorPicker } from 'react-colorful'
 import {
   useSettings, useUpdateDeviceMode, useCommandActuator,
-  useTriggerSync, useCapturePhoto,
+  useTriggerSync, useCapturePhoto, useDeviceActuators,
 } from '../api/piApi'
-import { useSystemState } from '../api/piApi'
 
 const MODES = ['LOW', 'MEDIUM', 'HIGH']
 
 export default function Settings() {
   const { data: settings, isLoading } = useSettings()
-  const { data: state } = useSystemState()
-
-  const updateMode     = useUpdateDeviceMode()
-  const commandActuator = useCommandActuator()
-  const triggerSync    = useTriggerSync()
-  const capturePhoto   = useCapturePhoto()
+  const commandActuator  = useCommandActuator()
+  const updateMode       = useUpdateDeviceMode()
+  const triggerSync      = useTriggerSync()
+  const capturePhoto     = useCapturePhoto()
+  const { data: actuatorList } = useDeviceActuators()
 
   const [ledColour, setLedColour]   = useState('#ffffff')
   const [showPicker, setShowPicker] = useState(false)
@@ -23,11 +21,9 @@ export default function Settings() {
 
   if (isLoading) return <div className="p-8 text-gray-500">Loading…</div>
 
-  const device = settings?.device ?? {}
-  const sync   = settings?.sync   ?? {}
-
-  // Find actuators from state
-  const actuators = Object.values(state?.sensors ?? {}) // placeholder; real actuator list from DM
+  const device    = settings?.device ?? {}
+  const sync      = settings?.sync   ?? {}
+  const actuators = Array.isArray(actuatorList) ? actuatorList : []
 
   function hexToRgb(hex) {
     const r = parseInt(hex.slice(1, 3), 16)
@@ -103,10 +99,9 @@ export default function Settings() {
               <HexColorPicker color={ledColour} onChange={setLedColour} />
             </div>
           )}
-          <p className="text-xs text-gray-500">
-            Enter the actuator ID of the RGB LED, then click Set.
-          </p>
-          <ActuatorIdSend
+          <ActuatorSelect
+            actuators={actuators}
+            type="RGB_LED"
             label="Set LED colour"
             onSend={sendLedColour}
             isPending={commandActuator.isPending}
@@ -118,7 +113,9 @@ export default function Settings() {
         {/* Water pump */}
         <div className="space-y-2">
           <label className="label">Water pump</label>
-          <ActuatorIdSend
+          <ActuatorSelect
+            actuators={actuators}
+            type="AIR_PUMP"
             label="Trigger pump (100%)"
             onSend={id => commandActuator.mutateAsync({ id, duty_cycle: 100 })}
             isPending={commandActuator.isPending}
@@ -177,20 +174,28 @@ function SyncRow({ label, value }) {
   )
 }
 
-function ActuatorIdSend({ label, onSend, isPending }) {
-  const [id, setId] = useState('')
+function ActuatorSelect({ actuators, type, label, onSend, isPending }) {
+  const filtered = actuators.filter(a => a.actuator_type === type)
+  const [selectedId, setSelectedId] = useState('')
   return (
-    <div className="flex gap-2 items-center">
-      <input
-        type="number"
-        value={id}
-        onChange={e => setId(e.target.value)}
-        placeholder="Actuator ID"
-        className="input w-32"
-      />
+    <div className="flex gap-2 items-center flex-wrap">
+      <select
+        value={selectedId}
+        onChange={e => setSelectedId(e.target.value)}
+        className="input"
+      >
+        <option value="">
+          {filtered.length === 0 ? `No ${type} actuators found` : 'Select actuator…'}
+        </option>
+        {filtered.map(a => (
+          <option key={a.id_device_actuator} value={a.id_device_actuator}>
+            {a.name ?? a.actuator_type} (#{a.id_device_actuator})
+          </option>
+        ))}
+      </select>
       <button
-        onClick={() => id && onSend(Number(id))}
-        disabled={!id || isPending}
+        onClick={() => selectedId && onSend(Number(selectedId))}
+        disabled={!selectedId || isPending}
         className="btn-primary whitespace-nowrap"
       >
         {label}

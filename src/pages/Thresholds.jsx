@@ -1,17 +1,42 @@
 import { useState } from 'react'
-import { useThresholds, useUpdateThreshold } from '../api/piApi'
+import {
+  useThresholds, useUpdateThreshold, useCreateThreshold,
+  useVariables, useGrowthPhases,
+} from '../api/piApi'
+
+const BLANK_NEW = { id_variable: '', id_growth_phase: '', min_value: '', max_value: '', target_value: '' }
 
 export default function Thresholds() {
   const { data, isLoading, error } = useThresholds()
-  const updateThreshold = useUpdateThreshold()
-  const [editing, setEditing] = useState(null)   // id_threshold being edited
-  const [draft, setDraft]     = useState({})
+  const { data: varsData }  = useVariables()
+  const { data: phasesData } = useGrowthPhases()
+  const updateThreshold  = useUpdateThreshold()
+  const createThreshold  = useCreateThreshold()
+  const [editing, setEditing]   = useState(null)
+  const [draft, setDraft]       = useState({})
+  const [showForm, setShowForm] = useState(false)
+  const [newT, setNewT]         = useState(BLANK_NEW)
 
   if (isLoading) return <div className="p-8 text-gray-500">Loading…</div>
   if (error)     return <div className="p-8 text-red-400">{error.message}</div>
 
-  const thresholds = data?.thresholds ?? []
+  const thresholds  = data?.thresholds ?? []
   const cultivation = data?.cultivation
+  const variables   = varsData?.variables ?? []
+  const phases      = phasesData?.growth_phases ?? []
+
+  async function handleCreate(e) {
+    e.preventDefault()
+    await createThreshold.mutateAsync({
+      id_variable:    Number(newT.id_variable),
+      id_growth_phase: Number(newT.id_growth_phase),
+      min_value:    newT.min_value    !== '' ? Number(newT.min_value)    : undefined,
+      max_value:    newT.max_value    !== '' ? Number(newT.max_value)    : undefined,
+      target_value: newT.target_value !== '' ? Number(newT.target_value) : undefined,
+    })
+    setNewT(BLANK_NEW)
+    setShowForm(false)
+  }
 
   function startEdit(t) {
     setEditing(t.id_threshold)
@@ -43,12 +68,75 @@ export default function Thresholds() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">Thresholds</h2>
-        {cultivation && (
-          <span className="text-sm text-gray-500">
-            Cultivation #{cultivation.id_cultivation}
-          </span>
-        )}
+        <div className="flex items-center gap-3">
+          {cultivation && (
+            <span className="text-sm text-gray-500">Cultivation #{cultivation.id_cultivation}</span>
+          )}
+          {cultivation && (
+            <button onClick={() => setShowForm(v => !v)} className="btn-secondary text-xs px-3 py-1">
+              {showForm ? 'Cancel' : '+ Add threshold'}
+            </button>
+          )}
+        </div>
       </div>
+
+      {showForm && (
+        <form onSubmit={handleCreate} className="card grid grid-cols-2 gap-3 max-w-lg">
+          <div className="col-span-2">
+            <label className="label text-xs">Variable *</label>
+            <select
+              required
+              value={newT.id_variable}
+              onChange={e => setNewT(n => ({ ...n, id_variable: e.target.value }))}
+              className="input text-sm"
+            >
+              <option value="">Select variable…</option>
+              {variables.map(v => (
+                <option key={v.id_variable} value={v.id_variable}>{v.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="col-span-2">
+            <label className="label text-xs">Growth phase *</label>
+            <select
+              required
+              value={newT.id_growth_phase}
+              onChange={e => setNewT(n => ({ ...n, id_growth_phase: e.target.value }))}
+              className="input text-sm"
+            >
+              <option value="">Select phase…</option>
+              {phases.map(p => (
+                <option key={p.id_growth_phase} value={p.id_growth_phase}>
+                  {p.name}{p.is_default ? ' (all phases)' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="label text-xs">Min value</label>
+            <input type="number" step="any" value={newT.min_value} className="input text-sm"
+              onChange={e => setNewT(n => ({ ...n, min_value: e.target.value }))} />
+          </div>
+          <div>
+            <label className="label text-xs">Max value</label>
+            <input type="number" step="any" value={newT.max_value} className="input text-sm"
+              onChange={e => setNewT(n => ({ ...n, max_value: e.target.value }))} />
+          </div>
+          <div className="col-span-2">
+            <label className="label text-xs">Target value</label>
+            <input type="number" step="any" value={newT.target_value} className="input text-sm"
+              onChange={e => setNewT(n => ({ ...n, target_value: e.target.value }))} />
+          </div>
+          <div className="col-span-2 flex gap-2">
+            <button type="submit" disabled={createThreshold.isPending} className="btn-primary text-sm">
+              {createThreshold.isPending ? 'Adding…' : 'Add threshold'}
+            </button>
+            {createThreshold.isError && (
+              <p className="text-xs text-red-400 self-center">{createThreshold.error.message}</p>
+            )}
+          </div>
+        </form>
+      )}
 
       {thresholds.length === 0 ? (
         <div className="card text-gray-500 text-sm">No thresholds defined.</div>

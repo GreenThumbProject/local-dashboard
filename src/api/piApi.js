@@ -66,6 +66,28 @@ export function useUpdateThreshold() {
   })
 }
 
+export function useCreateThreshold() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body) => post('/settings/thresholds', body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['thresholds'] }),
+  })
+}
+
+export function useVariables() {
+  return useQuery({
+    queryKey: ['variables'],
+    queryFn: () => get('/settings/variables'),
+  })
+}
+
+export function useGrowthPhases() {
+  return useQuery({
+    queryKey: ['growth-phases'],
+    queryFn: () => get('/settings/growth-phases'),
+  })
+}
+
 // ---------------------------------------------------------------------------
 // Cultivation — GET /settings/cultivation
 // ---------------------------------------------------------------------------
@@ -113,6 +135,16 @@ export function useEndCultivation() {
       qc.invalidateQueries({ queryKey: ['cultivation'] })
       qc.invalidateQueries({ queryKey: ['state'] })
     },
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Actuators list — GET /state/actuators
+// ---------------------------------------------------------------------------
+export function useDeviceActuators() {
+  return useQuery({
+    queryKey: ['device-actuators'],
+    queryFn: () => get('/state/actuators'),
   })
 }
 

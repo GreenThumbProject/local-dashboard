@@ -5,8 +5,14 @@ export async function apiFetch(path, options = {}) {
     ...options,
   })
   if (!res.ok) {
-    const text = await res.text().catch(() => res.statusText)
-    throw new Error(`${res.status} ${text}`)
+    let message = `${res.status} ${res.statusText}`
+    try {
+      const body = await res.json()
+      if (body?.detail) message = body.detail
+    } catch {
+      message = await res.text().catch(() => res.statusText) || message
+    }
+    throw new Error(message)
   }
   // 204 No Content
   if (res.status === 204) return null
