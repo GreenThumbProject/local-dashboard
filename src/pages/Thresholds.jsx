@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   useThresholds, useUpdateThreshold, useCreateThreshold,
   useVariables, useGrowthPhases,
@@ -7,6 +7,8 @@ import {
 const BLANK_NEW = { id_variable: '', id_growth_phase: '', min_value: '', max_value: '', target_value: '' }
 
 export default function Thresholds() {
+  useEffect(() => { document.title = 'GreenThumb · Thresholds' }, [])
+
   const { data, isLoading, error } = useThresholds()
   const { data: varsData }  = useVariables()
   const { data: phasesData } = useGrowthPhases()
@@ -17,8 +19,37 @@ export default function Thresholds() {
   const [showForm, setShowForm] = useState(false)
   const [newT, setNewT]         = useState(BLANK_NEW)
 
-  if (isLoading) return <div className="p-8 text-gray-500">Loading…</div>
-  if (error)     return <div className="p-8 text-red-400">{error.message}</div>
+  if (isLoading) return (
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="skeleton h-7 w-32" />
+        <div className="skeleton h-8 w-32" />
+      </div>
+      <div className="overflow-x-auto rounded-xl border border-gray-800">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-900">
+            <tr>
+              {['Variable', 'Phase', 'Min', 'Max', 'Target', 'Active', 'Sync', ''].map(h => (
+                <th key={h} className="th">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-800">
+            {[...Array(3)].map((_, i) => (
+              <tr key={i} className="bg-gray-950">
+                {[...Array(8)].map((__, j) => (
+                  <td key={j} className="px-4 py-3">
+                    <div className="skeleton h-4 w-full" />
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+  if (error) return <div className="p-8 text-red-400">{error.message}</div>
 
   const thresholds  = data?.thresholds ?? []
   const cultivation = data?.cultivation
@@ -70,7 +101,7 @@ export default function Thresholds() {
         <h2 className="text-xl font-semibold">Thresholds</h2>
         <div className="flex items-center gap-3">
           {cultivation && (
-            <span className="text-sm text-gray-500">Cultivation #{cultivation.id_cultivation}</span>
+            <span className="text-sm text-gray-400">Cultivation #{cultivation.id_cultivation}</span>
           )}
           {cultivation && (
             <button onClick={() => setShowForm(v => !v)} className="btn-secondary text-xs px-3 py-1">
@@ -83,8 +114,9 @@ export default function Thresholds() {
       {showForm && (
         <form onSubmit={handleCreate} className="card grid grid-cols-2 gap-3 max-w-lg">
           <div className="col-span-2">
-            <label className="label text-xs">Variable *</label>
+            <label htmlFor="new-threshold-variable" className="label text-xs">Variable *</label>
             <select
+              id="new-threshold-variable"
               required
               value={newT.id_variable}
               onChange={e => setNewT(n => ({ ...n, id_variable: e.target.value }))}
@@ -97,8 +129,9 @@ export default function Thresholds() {
             </select>
           </div>
           <div className="col-span-2">
-            <label className="label text-xs">Growth phase *</label>
+            <label htmlFor="new-threshold-phase" className="label text-xs">Growth phase *</label>
             <select
+              id="new-threshold-phase"
               required
               value={newT.id_growth_phase}
               onChange={e => setNewT(n => ({ ...n, id_growth_phase: e.target.value }))}
@@ -113,19 +146,36 @@ export default function Thresholds() {
             </select>
           </div>
           <div>
-            <label className="label text-xs">Min value</label>
-            <input type="number" step="any" value={newT.min_value} className="input text-sm"
-              onChange={e => setNewT(n => ({ ...n, min_value: e.target.value }))} />
+            <label htmlFor="new-threshold-min" className="label text-xs">Min value</label>
+            <input
+              id="new-threshold-min"
+              type="number"
+              step="any"
+              value={newT.min_value}
+              className="input text-sm"
+              onChange={e => setNewT(n => ({ ...n, min_value: e.target.value }))}
+            />
           </div>
           <div>
-            <label className="label text-xs">Max value</label>
-            <input type="number" step="any" value={newT.max_value} className="input text-sm"
+            <label htmlFor="new-threshold-max" className="label text-xs">Max value</label>
+            <input
+              id="new-threshold-max"
+              type="number"
+              step="any"
+              value={newT.max_value}
+              className="input text-sm"
               onChange={e => setNewT(n => ({ ...n, max_value: e.target.value }))} />
           </div>
           <div className="col-span-2">
-            <label className="label text-xs">Target value</label>
-            <input type="number" step="any" value={newT.target_value} className="input text-sm"
-              onChange={e => setNewT(n => ({ ...n, target_value: e.target.value }))} />
+            <label htmlFor="new-threshold-target" className="label text-xs">Target value</label>
+            <input
+              id="new-threshold-target"
+              type="number"
+              step="any"
+              value={newT.target_value}
+              className="input text-sm"
+              onChange={e => setNewT(n => ({ ...n, target_value: e.target.value }))}
+            />
           </div>
           <div className="col-span-2 flex gap-2">
             <button type="submit" disabled={createThreshold.isPending} className="btn-primary text-sm">
@@ -139,20 +189,22 @@ export default function Thresholds() {
       )}
 
       {thresholds.length === 0 ? (
-        <div className="card text-gray-500 text-sm">No thresholds defined.</div>
+        <div className="card text-gray-400 text-sm">
+          No thresholds defined for the active cultivation. Use the button above to add a threshold.
+        </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-gray-800">
           <table className="w-full text-sm">
             <thead className="bg-gray-900 text-gray-400">
               <tr>
-                <th className="px-4 py-3 text-left">Variable</th>
-                <th className="px-4 py-3 text-left">Phase</th>
-                <th className="px-4 py-3 text-right">Min</th>
-                <th className="px-4 py-3 text-right">Max</th>
-                <th className="px-4 py-3 text-right">Target</th>
-                <th className="px-4 py-3 text-center">Active</th>
-                <th className="px-4 py-3 text-center">Dirty</th>
-                <th className="px-4 py-3"></th>
+                <th className="th">Variable</th>
+                <th className="th">Phase</th>
+                <th className="th text-right">Min</th>
+                <th className="th text-right">Max</th>
+                <th className="th text-right">Target</th>
+                <th className="th text-center">Active</th>
+                <th className="th text-center">Sync</th>
+                <th className="th"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800">
@@ -238,7 +290,7 @@ export default function Thresholds() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center">
-                        {t.is_dirty && <span className="badge-yellow">Pending</span>}
+                        {t.is_dirty && <span className="badge-yellow">Pending sync</span>}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <button
@@ -258,7 +310,7 @@ export default function Thresholds() {
       )}
 
       {thresholds.some(t => t.is_dirty) && (
-        <p className="text-xs text-yellow-500">
+        <p className="text-xs text-yellow-400">
           ⚠ Changes marked "Pending" will be pushed to the cloud on the next sync cycle.
         </p>
       )}

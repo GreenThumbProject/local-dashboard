@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   useCultivation, useAdvancePhase,
   usePlantSpecies, useBeginCultivation, useEndCultivation,
@@ -24,8 +24,9 @@ function BeginForm() {
       <h3 className="text-sm font-semibold text-gray-300">Start Cultivation</h3>
       <form onSubmit={handleBegin} className="space-y-3">
         <div>
-          <label className="label">Plant species *</label>
+          <label htmlFor="begin-species" className="label">Plant species *</label>
           <select
+            id="begin-species"
             required
             value={form.id_plant_species}
             onChange={e => setForm(f => ({ ...f, id_plant_species: e.target.value }))}
@@ -39,8 +40,9 @@ function BeginForm() {
           </select>
         </div>
         <div>
-          <label className="label">Notes (optional)</label>
+          <label htmlFor="begin-notes" className="label">Notes (optional)</label>
           <input
+            id="begin-notes"
             type="text"
             value={form.notes}
             onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
@@ -64,6 +66,8 @@ function BeginForm() {
 }
 
 export default function Cultivation() {
+  useEffect(() => { document.title = 'GreenThumb · Cultivation' }, [])
+
   const { data, isLoading, error } = useCultivation()
   const advancePhase    = useAdvancePhase()
   const endCultivation  = useEndCultivation()
@@ -71,8 +75,26 @@ export default function Cultivation() {
   const [advancing, setAdvancing]   = useState(false)
   const [confirmEnd, setConfirmEnd] = useState(false)
 
-  if (isLoading) return <div className="p-8 text-gray-500">Loading…</div>
-  if (error)     return <div className="p-8 text-red-400">{error.message}</div>
+  if (isLoading) return (
+    <div className="p-6 space-y-6 max-w-2xl">
+      <div className="skeleton h-7 w-36" />
+      <div className="card space-y-3">
+        <div className="skeleton h-5 w-40" />
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="flex justify-between">
+            <div className="skeleton h-4 w-20" />
+            <div className="skeleton h-4 w-28" />
+          </div>
+        ))}
+      </div>
+      <div className="card space-y-3">
+        <div className="skeleton h-5 w-32" />
+        <div className="skeleton h-4 w-full" />
+        <div className="skeleton h-4 w-3/4" />
+      </div>
+    </div>
+  )
+  if (error) return <div className="p-8 text-red-400">{error.message}</div>
 
   const cultivation  = data?.cultivation
   const phases       = data?.phases ?? []
@@ -138,7 +160,7 @@ export default function Cultivation() {
       <div className="card space-y-3">
         <h3 className="text-sm font-semibold text-gray-300">Phase History</h3>
         {phases.length === 0 ? (
-          <p className="text-gray-500 text-sm">No phases recorded yet.</p>
+          <p className="text-gray-400 text-sm">No phases recorded yet.</p>
         ) : (
           <ol className="relative border-l border-gray-800 ml-2 space-y-4">
             {phases.map((p) => (
@@ -152,13 +174,13 @@ export default function Cultivation() {
                   <span className="font-medium text-gray-200">
                     {p.phase_name ?? `Phase ${p.id_growth_phase}`}
                   </span>
-                  <span className="ml-2 text-gray-500">
+                  <span className="ml-2 text-gray-400">
                     {new Date(p.started_at).toLocaleDateString()}
                     {p.ended_at ? ` → ${new Date(p.ended_at).toLocaleDateString()}` : ' → now'}
                   </span>
                   {p.is_current && <span className="ml-2 badge-green">Current</span>}
                 </div>
-                {p.notes && <p className="text-xs text-gray-500 mt-0.5">{p.notes}</p>}
+                {p.notes && <p className="text-xs text-gray-400 mt-0.5">{p.notes}</p>}
               </li>
             ))}
           </ol>
@@ -168,12 +190,13 @@ export default function Cultivation() {
       {/* Advance phase */}
       <div className="card space-y-3">
         <h3 className="text-sm font-semibold text-gray-300">Advance to Next Phase</h3>
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-gray-400">
           Closes the current phase and opens the next one in sequence (by phase_order).
         </p>
         <div>
-          <label className="label">Notes (optional)</label>
+          <label htmlFor="advance-notes" className="label">Notes (optional)</label>
           <input
+            id="advance-notes"
             type="text"
             value={notes}
             onChange={e => setNotes(e.target.value)}
@@ -199,7 +222,7 @@ export default function Cultivation() {
       {/* End cultivation */}
       <div className="card space-y-3 border border-red-900">
         <h3 className="text-sm font-semibold text-red-400">End Cultivation</h3>
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-gray-400">
           Closes the active cultivation and all open phases. This cannot be undone.
         </p>
         {!confirmEnd ? (
@@ -231,7 +254,7 @@ export default function Cultivation() {
 function Row({ label, value }) {
   return (
     <div className="flex justify-between text-sm">
-      <dt className="text-gray-500">{label}</dt>
+      <dt className="text-gray-400">{label}</dt>
       <dd className="text-gray-200">{value ?? '—'}</dd>
     </div>
   )

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend,
@@ -15,6 +15,8 @@ const TIME_RANGES = [
 const COLOURS = ['#22c55e', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4']
 
 export default function Graphs() {
+  useEffect(() => { document.title = 'GreenThumb · Graphs' }, [])
+
   const [range, setRange] = useState(TIME_RANGES[1])
   const [selectedVar, setSelectedVar] = useState(null)
 
@@ -40,8 +42,8 @@ export default function Graphs() {
     byVar[m.id_variable][ts].ts    = ts
   }
 
-  // Merge all timestamps into a single sorted series
-  const allTs = [...new Set(filtered.map(m => m.collected_at))].sort()
+  // Merge all timestamps into a single sorted series (normalise to ISO string to match byVar keys)
+  const allTs = [...new Set(filtered.map(m => new Date(m.collected_at).toISOString()))].sort()
   const chartData = allTs.map(ts => {
     const point = { ts: new Date(ts).toLocaleTimeString() }
     for (const varId of varIds) {
@@ -90,9 +92,11 @@ export default function Graphs() {
 
       <div className="card">
         {isLoading ? (
-          <div className="h-80 flex items-center justify-center text-gray-500">Loading…</div>
+          <div className="h-80 flex flex-col gap-4 p-4">
+            <div className="skeleton h-full w-full" />
+          </div>
         ) : chartData.length === 0 ? (
-          <div className="h-80 flex items-center justify-center text-gray-500">
+          <div className="h-80 flex items-center justify-center text-gray-400">
             No data for this time range
           </div>
         ) : (

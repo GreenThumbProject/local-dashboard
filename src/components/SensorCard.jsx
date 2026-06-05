@@ -20,7 +20,11 @@ export default function SensorCard({ label, value, unit = '', history = [], min,
     <div className="card flex flex-col gap-2">
       <div className="flex items-start justify-between">
         <span className="text-sm text-gray-400 font-medium">{label}</span>
-        {outOfRange && <span className="badge-red">Out of range</span>}
+        {outOfRange && (
+          <span className="badge-red" title="Value is outside the configured threshold">
+            Out of range
+          </span>
+        )}
       </div>
 
       <div className={`text-3xl font-bold tabular-nums ${valueColour}`}>
@@ -50,7 +54,7 @@ export default function SensorCard({ label, value, unit = '', history = [], min,
       )}
 
       {(min !== undefined || max !== undefined) && (
-        <div className="flex gap-3 text-xs text-gray-500">
+        <div className="flex gap-3 text-xs text-gray-400">
           {min !== undefined && <span>Min {min}</span>}
           {max !== undefined && <span>Max {max}</span>}
         </div>

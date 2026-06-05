@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useSystemState, useMeasurements } from '../api/piApi'
 import SensorCard from '../components/SensorCard'
 import StatusBadge from '../components/StatusBadge'
@@ -12,12 +13,32 @@ import StatusBadge from '../components/StatusBadge'
  *   - Active cultivation + current growth phase
  */
 export default function Dashboard() {
+  useEffect(() => { document.title = 'GreenThumb · Dashboard' }, [])
+
   const { data: state, isLoading, error } = useSystemState(5_000)
   // Grab recent measurements for sparklines (last 50 per variable)
   const { data: mData } = useMeasurements({ limit: 500 })
 
-  if (isLoading) return <PageShell><div className="text-gray-500 p-8">Loading…</div></PageShell>
-  if (error)     return <PageShell><div className="text-red-400 p-8">Error: {error.message}</div></PageShell>
+  if (isLoading) return (
+    <PageShell>
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="skeleton h-7 w-32" />
+          <div className="skeleton h-6 w-24" />
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="card space-y-2">
+              <div className="skeleton h-4 w-20" />
+              <div className="skeleton h-8 w-16" />
+              <div className="skeleton h-12 w-full" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </PageShell>
+  )
+  if (error) return <PageShell><div className="text-red-400 p-8">Error: {error.message}</div></PageShell>
 
   // Build {id_variable: [{ value }]} history map from measurement list
   const historyMap = {}
@@ -47,20 +68,31 @@ export default function Dashboard() {
   }))
 
   const activePhase = state?.active_phase
+  const phaseName = activePhase?.name ?? activePhase?.phase_name ?? null
 
   return (
     <PageShell>
       <div className="p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Dashboard</h2>
+          <div className="space-y-1">
+            <h2 className="text-xl font-semibold">Dashboard</h2>
+            <div className="flex items-center gap-1.5 text-xs text-gray-500">
+              <span className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse" />
+              <span>
+                {state?.timestamp
+                  ? `Updated ${new Date(state.timestamp).toLocaleTimeString()}`
+                  : 'Connecting…'}
+              </span>
+            </div>
+          </div>
           <div className="flex items-center gap-3">
             <StatusBadge ok={!state?.safety_mode}>
               {state?.safety_mode ? 'Safety Mode' : 'Normal'}
             </StatusBadge>
             {activePhase && (
               <span className="badge-green">
-                Phase {activePhase.id_growth_phase}
+                {phaseName ?? `Phase ${activePhase.id_growth_phase}`}
               </span>
             )}
           </div>
@@ -104,7 +136,7 @@ export default function Dashboard() {
             <h3 className="text-sm font-medium text-gray-400">Device Status</h3>
             <dl className="space-y-2 text-sm">
               <Row label="Safety mode" value={
-                <StatusBadge ok={!state?.safety_mode}>
+                <StatusBadge ok={!state?.safety_mode} title="Safety mode disables actuators to protect plants">
                   {state?.safety_mode ? 'Active' : 'Off'}
                 </StatusBadge>
               } />
@@ -118,8 +150,11 @@ export default function Dashboard() {
                 <hr className="border-gray-800" />
                 <h3 className="text-sm font-medium text-gray-400">Active Cultivation</h3>
                 <dl className="space-y-2 text-sm">
-                  <Row label="Phase ID"  value={activePhase.id_growth_phase} />
-                  <Row label="Started"   value={
+                  {phaseName
+                    ? <Row label="Phase" value={phaseName} />
+                    : <Row label="Phase ID" value={activePhase.id_growth_phase} />
+                  }
+                  <Row label="Started" value={
                     <span className="text-gray-300 font-mono text-xs">
                       {new Date(activePhase.started_at).toLocaleDateString()}
                     </span>
@@ -141,7 +176,7 @@ function PageShell({ children }) {
 function Row({ label, value }) {
   return (
     <div className="flex justify-between items-center">
-      <dt className="text-gray-500">{label}</dt>
+      <dt className="text-gray-400">{label}</dt>
       <dd>{typeof value === 'string' || typeof value === 'number'
         ? <span className="text-gray-200">{value}</span>
         : value}

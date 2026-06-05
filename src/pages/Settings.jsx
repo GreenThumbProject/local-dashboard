@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { HexColorPicker } from 'react-colorful'
 import {
   useSettings, useUpdateDeviceMode, useCommandActuator,
@@ -8,6 +8,8 @@ import {
 const MODES = ['LOW', 'MEDIUM', 'HIGH']
 
 export default function Settings() {
+  useEffect(() => { document.title = 'GreenThumb · Settings' }, [])
+
   const { data: settings, isLoading } = useSettings()
   const commandActuator  = useCommandActuator()
   const updateMode       = useUpdateDeviceMode()
@@ -19,7 +21,23 @@ export default function Settings() {
   const [showPicker, setShowPicker] = useState(false)
   const [syncMsg, setSyncMsg]       = useState(null)
 
-  if (isLoading) return <div className="p-8 text-gray-500">Loading…</div>
+  if (isLoading) return (
+    <div className="p-6 space-y-6 max-w-2xl">
+      <div className="skeleton h-7 w-40" />
+      <div className="card space-y-4">
+        <div className="skeleton h-5 w-32" />
+        <div className="skeleton h-4 w-full" />
+        <div className="flex gap-3">
+          {[...Array(3)].map((_, i) => <div key={i} className="skeleton h-10 w-24" />)}
+        </div>
+      </div>
+      <div className="card space-y-4">
+        <div className="skeleton h-5 w-40" />
+        <div className="skeleton h-10 w-full" />
+        <div className="skeleton h-10 w-full" />
+      </div>
+    </div>
+  )
 
   const device    = settings?.device ?? {}
   const sync      = settings?.sync   ?? {}
@@ -54,7 +72,7 @@ export default function Settings() {
       {/* Device mode */}
       <div className="card space-y-4">
         <h3 className="text-sm font-semibold text-gray-300">Operating Mode</h3>
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-gray-400">
           Controls sensor polling frequency and actuator response aggressiveness.
           Changes are synced to the cloud on the next cycle.
         </p>
@@ -75,7 +93,7 @@ export default function Settings() {
           ))}
         </div>
         {device.is_dirty && (
-          <p className="text-xs text-yellow-500">⚠ Mode change pending cloud sync.</p>
+          <p className="text-xs text-yellow-400">⚠ Mode change pending cloud sync.</p>
         )}
       </div>
 
@@ -85,12 +103,14 @@ export default function Settings() {
 
         {/* RGB LED */}
         <div className="space-y-3">
-          <label className="label">RGB LED colour</label>
+          <label htmlFor="led-colour-swatch" className="label">RGB LED colour</label>
           <div className="flex items-center gap-4">
             <button
+              id="led-colour-swatch"
               onClick={() => setShowPicker(v => !v)}
               className="w-10 h-10 rounded-lg border-2 border-gray-700 transition-colors"
               style={{ background: ledColour }}
+              aria-label="Pick LED colour"
             />
             <span className="text-sm text-gray-400 font-mono">{ledColour.toUpperCase()}</span>
           </div>

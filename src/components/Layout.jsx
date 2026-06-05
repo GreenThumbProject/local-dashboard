@@ -1,12 +1,13 @@
 import { NavLink, Outlet } from 'react-router-dom'
+import { LayoutDashboard, TrendingUp, Sliders, Settings, Sprout } from 'lucide-react'
 import { useSystemState } from '../api/piApi'
 
 const NAV = [
-  { to: '/',             label: 'Dashboard',  icon: '🌿' },
-  { to: '/graphs',       label: 'Graphs',     icon: '📈' },
-  { to: '/thresholds',   label: 'Thresholds', icon: '⚙️' },
-  { to: '/settings',     label: 'Settings',   icon: '🔧' },
-  { to: '/cultivation',  label: 'Cultivation', icon: '🌱' },
+  { to: '/',            label: 'Dashboard',   Icon: LayoutDashboard },
+  { to: '/graphs',      label: 'Graphs',      Icon: TrendingUp },
+  { to: '/thresholds',  label: 'Thresholds',  Icon: Sliders },
+  { to: '/settings',    label: 'Settings',    Icon: Settings },
+  { to: '/cultivation', label: 'Cultivation', Icon: Sprout },
 ]
 
 export default function Layout() {
@@ -23,7 +24,7 @@ export default function Layout() {
         </div>
 
         <nav className="flex-1 px-2 py-4 space-y-1">
-          {NAV.map(({ to, label, icon }) => (
+          {NAV.map(({ to, label, Icon }) => (
             <NavLink
               key={to}
               to={to}
@@ -36,15 +37,20 @@ export default function Layout() {
                 }`
               }
             >
-              <span>{icon}</span>
+              <Icon size={16} />
               {label}
             </NavLink>
           ))}
         </nav>
 
-        <div className="px-4 py-3 border-t border-gray-800 text-xs text-gray-600">
+        <div className="px-4 py-3 border-t border-gray-800 text-xs text-gray-400">
           {safetyMode && (
-            <div className="badge-red mb-2 w-full justify-center">⚠ Safety Mode</div>
+            <span
+              className="badge-red mb-2 flex justify-center"
+              title="Safety mode disables actuators to protect plants"
+            >
+              ⚠ Safety Mode
+            </span>
           )}
           <div>Pi API — local</div>
         </div>
