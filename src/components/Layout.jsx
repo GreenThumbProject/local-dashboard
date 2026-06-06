@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { LayoutDashboard, TrendingUp, Sliders, Settings, Sprout } from 'lucide-react'
 import { useSystemState } from '../api/piApi'
 
@@ -10,9 +10,15 @@ const NAV = [
   { to: '/cultivation', label: 'Cultivation', Icon: Sprout },
 ]
 
+function PageTransition({ children }) {
+  const { key } = useLocation()
+  return <div key={key} className="page-enter">{children}</div>
+}
+
 export default function Layout() {
-  const { data: state } = useSystemState()
+  const { data: state, error: stateError } = useSystemState()
   const safetyMode = state?.safety_mode
+  const connected = !!state && !stateError
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -43,22 +49,26 @@ export default function Layout() {
           ))}
         </nav>
 
-        <div className="px-4 py-3 border-t border-gray-800 text-xs text-gray-400">
+        <div className="px-4 py-3 border-t border-gray-800 text-xs text-gray-400 space-y-2">
           {safetyMode && (
-            <span
-              className="badge-red mb-2 flex justify-center"
-              title="Safety mode disables actuators to protect plants"
-            >
+            <span className="badge-red flex items-center justify-center gap-1.5">
               ⚠ Safety Mode
             </span>
           )}
-          <div>Pi API — local</div>
+          <div className="flex items-center gap-1.5">
+            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${connected ? 'bg-green-400' : stateError ? 'bg-red-400' : 'bg-gray-500'}`} />
+            <span className={connected ? 'text-gray-400' : stateError ? 'text-red-400' : 'text-gray-500'}>
+              {connected ? 'Device connected' : stateError ? 'Connection lost' : 'Connecting…'}
+            </span>
+          </div>
         </div>
       </aside>
 
       {/* Main content */}
       <main className="flex-1 overflow-y-auto bg-gray-950">
-        <Outlet />
+        <PageTransition>
+          <Outlet />
+        </PageTransition>
       </main>
     </div>
   )

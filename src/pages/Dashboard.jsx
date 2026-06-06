@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useSystemState, useMeasurements } from '../api/piApi'
 import SensorCard from '../components/SensorCard'
 import StatusBadge from '../components/StatusBadge'
+import ErrorState from '../components/ErrorState'
 
 /**
  * Dashboard — home page.
@@ -12,10 +13,20 @@ import StatusBadge from '../components/StatusBadge'
  *   - Device status (mode, safety mode, last heartbeat)
  *   - Active cultivation + current growth phase
  */
+function timeAgo(iso) {
+  const diff = Date.now() - new Date(iso)
+  const mins = Math.floor(diff / 60_000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  return `${Math.floor(hrs / 24)}d ago`
+}
+
 export default function Dashboard() {
   useEffect(() => { document.title = 'GreenThumb · Dashboard' }, [])
 
-  const { data: state, isLoading, error } = useSystemState(5_000)
+  const { data: state, isLoading, error, refetch } = useSystemState(5_000)
   // Grab recent measurements for sparklines (last 50 per variable)
   const { data: mData } = useMeasurements({ limit: 500 })
 
@@ -38,7 +49,16 @@ export default function Dashboard() {
       </div>
     </PageShell>
   )
-  if (error) return <PageShell><div className="text-red-400 p-8">Error: {error.message}</div></PageShell>
+  if (error) return (
+    <PageShell>
+      <ErrorState
+        title="Could not load sensor data"
+        message="Check that the Pi is running and reachable, then try again."
+        detail={error.message}
+        onRetry={refetch}
+      />
+    </PageShell>
+  )
 
   // Build {id_variable: [{ value }]} history map from measurement list
   const historyMap = {}
@@ -49,11 +69,15 @@ export default function Dashboard() {
     }
   }
 
-  // Build threshold map {id_variable: { min, max }}
+  // Build threshold map {id_variable: { min, max, target }}
   const thresholdMap = {}
   for (const t of (state?.thresholds ?? [])) {
     if (!thresholdMap[t.id_variable]) {
-      thresholdMap[t.id_variable] = { min: t.min_value, max: t.max_value }
+      thresholdMap[t.id_variable] = {
+        min: t.min_value,
+        max: t.max_value,
+        target: t.target_value ?? undefined,
+      }
     }
   }
 
@@ -102,16 +126,18 @@ export default function Dashboard() {
         {cards.length === 0 ? (
           <div className="card text-gray-500 text-sm">No sensor data available.</div>
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {cards.map(({ id_variable, value, label, unit }) => (
+          <div className="grid sensor-grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {cards.map(({ id_variable, value, label, unit }, i) => (
               <SensorCard
                 key={id_variable}
+                style={{ '--i': i }}
                 label={label}
                 value={value}
                 unit={unit}
                 history={historyMap[id_variable] ?? []}
                 min={thresholdMap[id_variable]?.min}
                 max={thresholdMap[id_variable]?.max}
+                target={thresholdMap[id_variable]?.target}
               />
             ))}
           </div>
@@ -140,8 +166,16 @@ export default function Dashboard() {
                   {state?.safety_mode ? 'Active' : 'Off'}
                 </StatusBadge>
               } />
-              <Row label="Timestamp" value={
-                <span className="text-gray-300 font-mono text-xs">{state?.timestamp ?? '—'}</span>
+              <Row label="Last reading" value={
+                state?.timestamp
+                  ? <time
+                      dateTime={state.timestamp}
+                      title={new Date(state.timestamp).toLocaleString()}
+                      className="text-gray-300 text-xs tabular-nums"
+                    >
+                      {timeAgo(state.timestamp)}
+                    </time>
+                  : <span className="text-gray-300 text-xs">—</span>
               } />
             </dl>
 

@@ -46,4 +46,38 @@
   .th { @apply px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide; }
   .td { @apply px-4 py-3 text-sm text-gray-200; }
   .skeleton { @apply bg-gray-800 rounded animate-pulse; }
+
+  /* Motion */
+  .value-flash-pulse {
+    animation: value-flash 300ms cubic-bezier(0.25, 1, 0.5, 1) both;
+  }
+  .page-enter {
+    animation: page-enter 200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .sensor-grid > * {
+    animation: card-enter 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(var(--i, 0) * 50ms);
+  }
+}
+
+@keyframes value-flash {
+  from { background-color: rgb(34 197 94 / 0.18); }
+  to   { background-color: transparent; }
+}
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes card-enter {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .value-flash-pulse,
+  .page-enter,
+  .sensor-grid > * {
+    animation: none !important;
+    transition: none !important;
+  }
 }

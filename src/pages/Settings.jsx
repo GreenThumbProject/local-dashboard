@@ -59,9 +59,9 @@ export default function Settings() {
     setSyncMsg(null)
     try {
       await triggerSync.mutateAsync()
-      setSyncMsg('Sync triggered — check sync times in a few seconds.')
+      setSyncMsg('Sync triggered. Check sync times in a few seconds.')
     } catch (e) {
-      setSyncMsg(`Error: ${e.message}`)
+      setSyncMsg('Sync failed. Check your connection and try again.')
     }
   }
 
@@ -176,7 +176,7 @@ export default function Settings() {
           <p className="text-xs text-gray-400">Saved: {capturePhoto.data.image_path}</p>
         )}
         {capturePhoto.isError && (
-          <p className="text-xs text-red-400">{capturePhoto.error.message}</p>
+          <p className="text-xs text-red-400">Could not capture photo. Check the camera is connected and try again.</p>
         )}
       </div>
     </div>
@@ -205,7 +205,7 @@ function ActuatorSelect({ actuators, type, label, onSend, isPending }) {
         className="input"
       >
         <option value="">
-          {filtered.length === 0 ? `No ${type} actuators found` : 'Select actuator…'}
+          {filtered.length === 0 ? 'No actuators configured' : 'Select actuator…'}
         </option>
         {filtered.map(a => (
           <option key={a.id_device_actuator} value={a.id_device_actuator}>

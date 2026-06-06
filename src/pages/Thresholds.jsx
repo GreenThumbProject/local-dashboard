@@ -3,13 +3,14 @@ import {
   useThresholds, useUpdateThreshold, useCreateThreshold,
   useVariables, useGrowthPhases,
 } from '../api/piApi'
+import ErrorState from '../components/ErrorState'
 
 const BLANK_NEW = { id_variable: '', id_growth_phase: '', min_value: '', max_value: '', target_value: '' }
 
 export default function Thresholds() {
   useEffect(() => { document.title = 'GreenThumb · Thresholds' }, [])
 
-  const { data, isLoading, error } = useThresholds()
+  const { data, isLoading, error, refetch } = useThresholds()
   const { data: varsData }  = useVariables()
   const { data: phasesData } = useGrowthPhases()
   const updateThreshold  = useUpdateThreshold()
@@ -49,7 +50,14 @@ export default function Thresholds() {
       </div>
     </div>
   )
-  if (error) return <div className="p-8 text-red-400">{error.message}</div>
+  if (error) return (
+    <ErrorState
+      title="Could not load thresholds"
+      message="Check your connection and try again."
+      detail={error.message}
+      onRetry={refetch}
+    />
+  )
 
   const thresholds  = data?.thresholds ?? []
   const cultivation = data?.cultivation
@@ -182,7 +190,7 @@ export default function Thresholds() {
               {createThreshold.isPending ? 'Adding…' : 'Add threshold'}
             </button>
             {createThreshold.isError && (
-              <p className="text-xs text-red-400 self-center">{createThreshold.error.message}</p>
+              <p className="text-xs text-red-400 self-center">Could not save threshold. Check your connection and try again.</p>
             )}
           </div>
         </form>

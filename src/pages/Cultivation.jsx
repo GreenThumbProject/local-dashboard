@@ -3,6 +3,7 @@ import {
   useCultivation, useAdvancePhase,
   usePlantSpecies, useBeginCultivation, useEndCultivation,
 } from '../api/piApi'
+import ErrorState from '../components/ErrorState'
 
 function BeginForm() {
   const { data: speciesList, isLoading: loadingSpecies } = usePlantSpecies()
@@ -58,7 +59,7 @@ function BeginForm() {
           {beginCultivation.isPending ? 'Starting…' : 'Begin cultivation'}
         </button>
         {beginCultivation.isError && (
-          <p className="text-xs text-red-400">{beginCultivation.error.message}</p>
+          <p className="text-xs text-red-400">Could not start cultivation. Check your connection and try again.</p>
         )}
       </form>
     </div>
@@ -68,7 +69,7 @@ function BeginForm() {
 export default function Cultivation() {
   useEffect(() => { document.title = 'GreenThumb · Cultivation' }, [])
 
-  const { data, isLoading, error } = useCultivation()
+  const { data, isLoading, error, refetch } = useCultivation()
   const advancePhase    = useAdvancePhase()
   const endCultivation  = useEndCultivation()
   const [notes, setNotes]           = useState('')
@@ -94,7 +95,14 @@ export default function Cultivation() {
       </div>
     </div>
   )
-  if (error) return <div className="p-8 text-red-400">{error.message}</div>
+  if (error) return (
+    <ErrorState
+      title="Could not load cultivation data"
+      message="Check your connection and try again."
+      detail={error.message}
+      onRetry={refetch}
+    />
+  )
 
   const cultivation  = data?.cultivation
   const phases       = data?.phases ?? []
@@ -151,7 +159,7 @@ export default function Cultivation() {
           <dl className="space-y-1 text-sm">
             <Row label="Order"   value={currentPhase.phase_order} />
             <Row label="Started" value={new Date(currentPhase.started_at).toLocaleDateString()} />
-            <Row label="Method"  value={currentPhase.detected_by} />
+            <Row label="Detected by" value={currentPhase.detected_by} />
           </dl>
         </div>
       )}
@@ -191,7 +199,7 @@ export default function Cultivation() {
       <div className="card space-y-3">
         <h3 className="text-sm font-semibold text-gray-300">Advance to Next Phase</h3>
         <p className="text-xs text-gray-400">
-          Closes the current phase and opens the next one in sequence (by phase_order).
+          Closes the current phase and starts the next one in the sequence.
         </p>
         <div>
           <label htmlFor="advance-notes" className="label">Notes (optional)</label>
@@ -212,7 +220,7 @@ export default function Cultivation() {
           {advancing ? 'Advancing…' : 'Advance phase'}
         </button>
         {advancePhase.isError && (
-          <p className="text-xs text-red-400">{advancePhase.error.message}</p>
+          <p className="text-xs text-red-400">Could not advance to the next phase. Check your connection and try again.</p>
         )}
         {advancePhase.isSuccess && (
           <p className="text-xs text-brand-400">Phase advanced successfully.</p>
@@ -236,7 +244,7 @@ export default function Cultivation() {
               disabled={endCultivation.isPending}
               className="btn-primary bg-red-700 hover:bg-red-600"
             >
-              {endCultivation.isPending ? 'Ending…' : 'Confirm end'}
+              {endCultivation.isPending ? 'Ending…' : 'End cultivation'}
             </button>
             <button onClick={() => setConfirmEnd(false)} className="btn-secondary text-xs">
               Cancel
@@ -244,7 +252,7 @@ export default function Cultivation() {
           </div>
         )}
         {endCultivation.isError && (
-          <p className="text-xs text-red-400">{endCultivation.error.message}</p>
+          <p className="text-xs text-red-400">Could not end cultivation. Check your connection and try again.</p>
         )}
       </div>
     </div>
